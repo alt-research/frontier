@@ -356,19 +356,14 @@ where
 	let address_bloom_filter = FilteredParams::adresses_bloom_filter(&filter.address);
 	let topics_bloom_filter = FilteredParams::topics_bloom_filter(&topics_input);
 
-
-
 	while current_number <= to {
 		let id = BlockId::Number(current_number);
 		let substrate_hash = client
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-			client,
-			id,
-		);
-		
+		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(client, id);
+
 		let handler = overrides
 			.schemas
 			.get(&schema)
