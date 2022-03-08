@@ -206,12 +206,11 @@ pub mod pallet {
 					UniqueSaturatedInto::<u32>::unique_saturated_into(to_remove),
 				));
 			}
+			Pending::<T>::kill();
+			PendingLast::<T>::kill();
 		}
 
 		fn on_initialize(_: T::BlockNumber) -> Weight {
-			Pending::<T>::kill();
-			PendingLast::<T>::kill();
-
 			// If the digest contain an existing ethereum block(encoded as PreLog), If contains,
 			// execute the imported block firstly and disable transact dispatch function.
 			if let Ok(log) = fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()) {
