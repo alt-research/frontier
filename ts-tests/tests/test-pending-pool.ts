@@ -49,3 +49,70 @@ describeWithFrontier("Frontier RPC (Pending Pool)", (context) => {
 		});
 	});
 });
+
+describeWithFrontier("Frontier RPC (Pending Pool Transaction Count)", (context) => {
+	const GENESIS_ACCOUNT = "0x6be02d1d3665660d22ff9624b7be0551ee1ac91b";
+	const GENESIS_ACCOUNT_PRIVATE_KEY = "0x99B3C12287537E38C90A9219D4CB074A89A16E9CDB20BF85728EBD97C343E342";
+	const TEST_ACCOUNT = "0x1111111111111111111111111111111111111111";
+
+	it("should return pending transaction counts", async function () {
+		this.timeout(25000);
+
+		// nonce should be 0 after init
+		expect(await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT, 'latest')).to.eq(0);
+
+		var nonce = 0;
+
+		// tx for test
+		let sendTransaction = async () => {
+			const tx = await context.web3.eth.accounts.signTransaction({
+				from: GENESIS_ACCOUNT,
+				to: TEST_ACCOUNT,
+				value: "0x" + (nonce + 500).toString(16), // Must me higher than ExistentialDeposit (500)
+				gasPrice: "0x3B9ACA06",
+				gas: "0x100000",
+				nonce: nonce,
+			}, GENESIS_ACCOUNT_PRIVATE_KEY);
+			await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])
+
+			// add nonce
+			nonce = nonce + 1;
+
+			return tx
+		}
+
+		// no pending trx
+		expect(await (await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", ['pending'])).result).to.equal('0x0');
+
+		// build a block with two transactions
+		await sendTransaction();
+		// block 1 should have 1
+		await createAndFinalizeBlock(context.web3);
+
+		for (var _ of Array(5)) { 
+			await sendTransaction();
+		}
+
+		// block 2 should have 5
+		await createAndFinalizeBlock(context.web3);
+
+		expect(await (await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", [1])).result).to.equal('0x1');
+		expect(await (await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", [2])).result).to.equal('0x5');
+
+		// not exists block 3
+		expect(await (await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", [3])).result).to.equal(null);
+
+		// no pending trx
+		expect(await (await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", ['pending'])).result).to.equal('0x0');
+
+		for (var _ of Array(5)) { 
+			await sendTransaction();
+		}
+
+		expect(await (await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", ['pending'])).result).to.equal('0x5');
+
+		await createAndFinalizeBlock(context.web3);
+
+		expect(await (await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", ['pending'])).result).to.equal('0x0');
+	});
+});
