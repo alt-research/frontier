@@ -173,6 +173,7 @@ where
 		block_data_cache.clone(),
 		fee_history_cache,
 		fee_history_cache_limit,
+		fc_rpc::format::Legacy,
 	)));
 
 	if let Some(filter_pool) = filter_pool {

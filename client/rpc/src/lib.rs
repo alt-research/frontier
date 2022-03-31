@@ -32,6 +32,8 @@ mod overrides;
 mod signer;
 mod web3;
 
+pub mod format;
+
 pub use self::{
 	eth::{Eth, EthBlockDataCacheTask, EthFilter, EthTask},
 	eth_pubsub::{EthPubSub, HexEncodedIdProvider},
