@@ -204,11 +204,12 @@ pub mod pallet {
 					UniqueSaturatedInto::<u32>::unique_saturated_into(to_remove),
 				));
 			}
+			Pending::<T>::kill();
+			PendingLast::<T>::kill();
 		}
 
 		fn on_initialize(_: T::BlockNumber) -> Weight {
-			Pending::<T>::kill();
-			let mut weight = T::SystemWeightInfo::kill_storage(1);
+			let mut weight = T::SystemWeightInfo::kill_storage(2);
 
 			// If the digest contain an existing ethereum block(encoded as PreLog), If contains,
 			// execute the imported block firstly and disable transact dispatch function.
@@ -288,6 +289,11 @@ pub mod pallet {
 	#[pallet::storage]
 	pub(super) type Pending<T: Config> =
 		StorageValue<_, Vec<(Transaction, TransactionStatus, Receipt)>, ValueQuery>;
+
+	/// Latest storage of current building block's transactions and receipts.
+	#[pallet::storage]
+	pub(super) type PendingLast<T: Config> =
+		StorageValue<_, (Transaction, TransactionStatus, Receipt), OptionQuery>;
 
 	/// The current Ethereum block.
 	#[pallet::storage]
@@ -594,9 +600,8 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn apply_validated_transaction(source: H160, transaction: Transaction) -> PostDispatchInfo {
-		let pending = Pending::<T>::get();
 		let transaction_hash = transaction.hash();
-		let transaction_index = pending.len() as u32;
+		let transaction_index = Pending::<T>::decode_len().unwrap_or_default() as u32;
 
 		let (to, _, info) = Self::execute(source, &transaction, None)
 			.expect("transaction is already validated; error indicates that the block is invalid");
@@ -647,7 +652,7 @@ impl<T: Config> Pallet<T> {
 			};
 			let logs_bloom = status.clone().logs_bloom;
 			let logs = status.clone().logs;
-			let cumulative_gas_used = if let Some((_, _, receipt)) = pending.last() {
+			let cumulative_gas_used = if let Some((_, _, receipt)) = PendingLast::<T>::get() {
 				match receipt {
 					Receipt::Legacy(d) | Receipt::EIP2930(d) | Receipt::EIP1559(d) => {
 						d.used_gas.saturating_add(used_gas)
@@ -678,7 +683,8 @@ impl<T: Config> Pallet<T> {
 			}
 		};
 
-		Pending::<T>::append((transaction, status, receipt));
+		Pending::<T>::append((transaction.clone(), status.clone(), receipt.clone()));
+		PendingLast::<T>::put((transaction, status, receipt));
 
 		Self::deposit_event(Event::Executed(
 			source,
