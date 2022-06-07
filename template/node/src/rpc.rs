@@ -169,6 +169,7 @@ where
 			Arc::clone(&block_data_cache),
 			fee_history_cache,
 			fee_history_cache_limit,
+			fc_rpc::format::Legacy,
 		)
 		.into_rpc(),
 	)?;
