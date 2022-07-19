@@ -879,12 +879,16 @@ impl<T: Config> BlockHashMapping for EthereumBlockHashMapping<T> {
 }
 
 #[repr(u8)]
-enum TransactionValidationError {
+#[derive(num_enum::FromPrimitive, num_enum::IntoPrimitive)]
+pub enum TransactionValidationError {
 	#[allow(dead_code)]
+	#[num_enum(default)]
 	UnknownError,
 	InvalidChainId,
 	InvalidSignature,
-	InvalidGasLimit,
+	GasLimitTooLow,
+	GasLimitTooHigh,
+	InsufficientFundsForTransfer,
 	MaxFeePerGasTooLow,
 }
 
@@ -894,10 +898,10 @@ impl From<InvalidEvmTransactionError> for InvalidTransactionWrapper {
 	fn from(validation_error: InvalidEvmTransactionError) -> Self {
 		match validation_error {
 			InvalidEvmTransactionError::GasLimitTooLow => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(TransactionValidationError::InvalidGasLimit as u8),
+				InvalidTransaction::Custom(TransactionValidationError::GasLimitTooLow as u8),
 			),
 			InvalidEvmTransactionError::GasLimitTooHigh => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(TransactionValidationError::InvalidGasLimit as u8),
+				InvalidTransaction::Custom(TransactionValidationError::GasLimitTooHigh as u8),
 			),
 			InvalidEvmTransactionError::GasPriceTooLow => {
 				InvalidTransactionWrapper(InvalidTransaction::Payment)

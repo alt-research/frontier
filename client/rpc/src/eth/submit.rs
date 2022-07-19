@@ -36,7 +36,13 @@ use sp_runtime::{
 use fc_rpc_core::types::*;
 use fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
 
-use crate::{eth::Eth, internal_err};
+use crate::{
+	eth::{
+		format::{Formatter, Geth},
+		Eth,
+	},
+	internal_err,
+};
 
 impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
 where
@@ -202,7 +208,7 @@ where
 		self.pool
 			.submit_one(&block_hash, TransactionSource::Local, extrinsic)
 			.map_ok(move |_| transaction_hash)
-			.map_err(|err| internal_err(format!("submit transaction to pool failed: {:?}", err)))
+			.map_err(|err| internal_err(Geth::pool_error(err)))
 			.await
 	}
 
