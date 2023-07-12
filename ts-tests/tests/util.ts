@@ -7,7 +7,6 @@ import { NODE_BINARY_NAME, CHAIN_ID } from "./config";
 
 export const PORT = 19931;
 export const RPC_PORT = 19932;
-export const WS_PORT = 19933;
 
 export const DISPLAY_LOG = process.env.FRONTIER_LOG || false;
 export const FRONTIER_LOG = process.env.FRONTIER_LOG || "info";
@@ -81,7 +80,6 @@ export async function startFrontierNode(provider?: string): Promise<{
 		`-l${FRONTIER_LOG}`,
 		`--port=${PORT}`,
 		`--rpc-port=${RPC_PORT}`,
-		`--ws-port=${WS_PORT}`,
 		`--tmp`,
 	];
 	const binary = spawn(cmd, args);
@@ -132,7 +130,7 @@ export async function startFrontierNode(provider?: string): Promise<{
 	});
 
 	if (provider == "ws") {
-		web3 = new Web3(`ws://127.0.0.1:${WS_PORT}`);
+		web3 = new Web3(`ws://127.0.0.1:${RPC_PORT}`);
 	}
 
 	let ethersjs = new ethers.JsonRpcProvider(`http://127.0.0.1:${RPC_PORT}`, {

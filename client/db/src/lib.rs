@@ -18,7 +18,6 @@
 
 #![deny(unused_crate_dependencies)]
 
-#[cfg(feature = "parity-db")]
 mod parity_db_adapter;
 mod upgrade;
 mod utils;
@@ -83,6 +82,12 @@ impl<Block: BlockT> Backend<Block> {
 			client,
 			&DatabaseSettings {
 				source: match database {
+					DatabaseSource::Auto { .. } => DatabaseSource::Auto {
+						rocksdb_path: frontier_database_dir(db_config_dir, "db"),
+						paritydb_path: frontier_database_dir(db_config_dir, "paritydb"),
+						cache_size: 0,
+					},
+					#[cfg(feature = "rocksdb")]
 					DatabaseSource::RocksDb { .. } => DatabaseSource::RocksDb {
 						path: frontier_database_dir(db_config_dir, "db"),
 						cache_size: 0,
@@ -90,14 +95,9 @@ impl<Block: BlockT> Backend<Block> {
 					DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
 						path: frontier_database_dir(db_config_dir, "paritydb"),
 					},
-					DatabaseSource::Auto { .. } => DatabaseSource::Auto {
-						rocksdb_path: frontier_database_dir(db_config_dir, "db"),
-						paritydb_path: frontier_database_dir(db_config_dir, "paritydb"),
-						cache_size: 0,
-					},
 					_ => {
 						return Err(
-							"Supported db sources: `rocksdb` | `paritydb` | `auto`".to_string()
+							"Supported db sources: `auto` | `rocksdb` | `paritydb`".to_string()
 						)
 					}
 				},

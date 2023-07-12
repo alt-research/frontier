@@ -104,9 +104,8 @@ pub(crate) fn upgrade_db<Block: BlockT, C: HeaderBackend<Block>>(
 				DatabaseSource::ParityDb { .. } => {
 					migrate_1_to_2_parity_db::<Block, C>(client, db_path)?
 				}
-				DatabaseSource::RocksDb { .. } => {
-					migrate_1_to_2_rocks_db::<Block, C>(client, db_path)?
-				}
+				#[cfg(feature = "rocksdb")]
+				DatabaseSource::RocksDb { .. } => migrate_1_to_2_rocks_db::<Block, C>(client, db_path)?,
 				_ => panic!("DatabaseSource required for upgrade ParityDb | RocksDb"),
 			};
 			if !summary.error.is_empty() {
@@ -165,6 +164,7 @@ fn version_file_path(path: &Path) -> PathBuf {
 /// Migration from version1 to version2:
 /// - The format of the Ethereum<>Substrate block mapping changed to support equivocation.
 /// - Migrating schema from One-to-one to One-to-many (EthHash: Vec<SubstrateHash>) relationship.
+#[cfg(feature = "rocksdb")]
 pub(crate) fn migrate_1_to_2_rocks_db<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	db_path: &Path,
@@ -352,6 +352,7 @@ mod tests {
 		Ok(Arc::new(crate::Backend::<Block>::new(client, setting)?))
 	}
 
+	#[cfg_attr(not(feature = "rocksdb"), ignore)]
 	#[test]
 	fn upgrade_1_to_2_works() {
 		let tmp_1 = tempdir().expect("create a temporary directory");
@@ -359,6 +360,7 @@ mod tests {
 
 		let settings = vec![
 			// Rocks db
+			#[cfg(feature = "rocksdb")]
 			crate::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {
 					path: tmp_1.path().to_owned(),
@@ -495,6 +497,7 @@ mod tests {
 		}
 	}
 
+	#[cfg(feature = "rocksdb")]
 	#[test]
 	fn create_db_with_current_version_works() {
 		let tmp = tempdir().expect("create a temporary directory");

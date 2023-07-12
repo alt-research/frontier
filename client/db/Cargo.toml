@@ -12,13 +12,13 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 kvdb-rocksdb = { workspace = true, optional = true }
-log = "0.4.17"
-parity-db = { workspace = true, optional = true }
-parking_lot = "0.12.1"
+log = { workspace = true }
+parity-db = { workspace = true }
+parking_lot = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
-smallvec = "1.10"
+smallvec = { version = "1.10", optional = true }
 # Substrate
-sc-client-db = { workspace = true, features = ["rocksdb"] }
+sc-client-db = { workspace = true }
 sp-blockchain = { workspace = true }
 sp-core = { workspace = true }
 sp-database = { workspace = true }
@@ -27,7 +27,12 @@ sp-runtime = { workspace = true }
 fp-storage = { workspace = true, features = ["default"] }
 
 [features]
-default = ["kvdb-rocksdb", "parity-db"]
+default = ["rocksdb"]
+rocksdb = [
+	"kvdb-rocksdb",
+	"sc-client-db/rocksdb",
+	"smallvec",
+]
 
 [dev-dependencies]
 futures = "0.3.25"

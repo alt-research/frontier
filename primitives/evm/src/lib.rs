@@ -23,11 +23,12 @@ mod validation;
 
 use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight};
 use scale_codec::{Decode, Encode};
-#[cfg(feature = "std")]
+use scale_info::TypeInfo;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-use sp_core::{H160, U256};
+use sp_core::{H160, H256, U256};
 use sp_runtime::Perbill;
-use sp_std::vec::Vec;
+use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
 pub use evm::{
 	backend::{Basic as Account, Log},
@@ -47,8 +48,8 @@ pub use self::{
 	},
 };
 
-#[derive(Clone, Eq, PartialEq, Default, Encode, Decode)]
-#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
+#[derive(Clone, Eq, PartialEq, Debug, Default, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// External input from the transaction.
 pub struct Vicinity {
 	/// Current transaction gas price.
@@ -57,8 +58,8 @@ pub struct Vicinity {
 	pub origin: H160,
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode)]
-#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
+#[derive(Clone, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ExecutionInfo<T> {
 	pub exit_reason: ExitReason,
 	pub value: T,
@@ -69,23 +70,23 @@ pub struct ExecutionInfo<T> {
 pub type CallInfo = ExecutionInfo<Vec<u8>>;
 pub type CreateInfo = ExecutionInfo<H160>;
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode)]
-#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
+#[derive(Clone, Eq, PartialEq, Debug, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum CallOrCreateInfo {
 	Call(CallInfo),
 	Create(CreateInfo),
 }
 
 /// Account definition used for genesis block construction.
-#[cfg(feature = "std")]
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Debug, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GenesisAccount {
 	/// Account nonce.
 	pub nonce: U256,
 	/// Account balance.
 	pub balance: U256,
 	/// Full account storage.
-	pub storage: std::collections::BTreeMap<sp_core::H256, sp_core::H256>,
+	pub storage: BTreeMap<H256, H256>,
 	/// Account code.
 	pub code: Vec<u8>,
 }
